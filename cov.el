@@ -800,6 +800,11 @@ even if part of the line is outside any narrrowing."
   "Compile list of line numbers of statements that have a zero coverage."
   (mapcar #'car (seq-filter (lambda (line) (eql (cadr line) 0)) (cov--get-buffer-coverage))))
 
+(defun cov-number-uncovered ()
+  "Caclulate number of uncovered statements in current buffer."
+  (when (cov--get-buffer-coverage)
+    (length (cov--buffer-uncovered))))
+
 (provide 'cov)
 ;;; cov.el ends here
 
