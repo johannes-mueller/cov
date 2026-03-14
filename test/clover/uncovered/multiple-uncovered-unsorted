@@ -1,0 +1,10 @@
+comment line
+
+a line executed 100%
+a line executed  86%
+a line executed  85%
+first line never executed
+a line executed  46%
+a line executed  45%
+second line never executed
+a line executed   1%

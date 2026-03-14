@@ -774,6 +774,32 @@ even if part of the line is outside any narrrowing."
         (cov-turn-on)
       (cov-turn-off))))
 
+;;;###autoload
+(defun cov-next-uncovered ()
+  "Go to next uncovered line."
+  (interactive)
+  (let ((next-uncovered (cl-find-if (lambda (line) (> line (line-number-at-pos)))
+                                    (sort (cov--buffer-uncovered)))))
+    (if next-uncovered
+      (progn (goto-char (point-min))
+             (forward-line (1- next-uncovered)))
+    (message "No more uncovered sections."))))
+
+;;;###autoload
+(defun cov-prev-uncovered ()
+  "Go to previous unvocered line."
+  (interactive)
+  (let ((prev-uncovered (cl-find-if (lambda (line) (< line (line-number-at-pos)))
+                                    (sort (cov--buffer-uncovered) :reverse t))))
+    (if prev-uncovered
+      (progn (goto-char (point-min))
+             (forward-line (1- prev-uncovered)))
+    (message "No more uncovered sections."))))
+
+(defun cov--buffer-uncovered ()
+  "Compile list of line numbers of statements that have a zero coverage."
+  (mapcar #'car (seq-filter (lambda (line) (eql (cadr line) 0)) (cov--get-buffer-coverage))))
+
 (provide 'cov)
 ;;; cov.el ends here
 
