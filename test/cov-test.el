@@ -1036,6 +1036,31 @@ text properties with list values."
     (cov-mode 1)
     (should (eq (cov-number-uncovered) nil))))
 
+
+(ert-deftest cov-mode--lighter-allcovered ()
+  (cov--with-test-buffer "clover/uncovered/all-covered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "0/8"))))
+
+(ert-deftest cov-mode--lighter-one-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/one-uncovered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "1/9"))))
+
+(ert-deftest cov-mode--lighter-two-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/multiple-uncovered-unsorted"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "2/8"))))
+
+(ert-deftest cov-mode--lighter-no-coverage-data ()
+  (cov--with-test-buffer "clover/uncovered/no-coverage-data"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "?"))))
+
 ;; Local Variables:
 ;; indent-tabs-mode: nil
 ;; End:

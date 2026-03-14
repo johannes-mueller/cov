@@ -768,7 +768,7 @@ even if part of the line is outside any narrrowing."
 ;;;###autoload
 (define-minor-mode cov-mode
   "Minor mode for cov."
-  :lighter " cov"
+  :lighter (:eval (format " cov(%s)" (cov--lighter-indicator)))
   (progn
     (if cov-mode
         (cov-turn-on)
@@ -804,6 +804,14 @@ even if part of the line is outside any narrrowing."
   "Caclulate number of uncovered statements in current buffer."
   (when (cov--get-buffer-coverage)
     (length (cov--buffer-uncovered))))
+
+(defun cov--lighter-indicator ()
+  "Setup string to show how many statements are uncovered in current buffer."
+  (let ((uncovered (cov-number-uncovered))
+        (total (length (cov--get-buffer-coverage))))
+    (if uncovered
+      (format "%s/%s" uncovered total)
+    "?")))
 
 (provide 'cov)
 ;;; cov.el ends here
