@@ -768,11 +768,50 @@ even if part of the line is outside any narrrowing."
 ;;;###autoload
 (define-minor-mode cov-mode
   "Minor mode for cov."
-  :lighter " cov"
+  :lighter (:eval (format " cov(%s)" (cov--lighter-indicator)))
   (progn
     (if cov-mode
         (cov-turn-on)
       (cov-turn-off))))
+
+;;;###autoload
+(defun cov-next-uncovered ()
+  "Go to next uncovered line."
+  (interactive)
+  (let ((next-uncovered (cl-find-if (lambda (line) (> line (line-number-at-pos)))
+                                    (sort (cov--buffer-uncovered)))))
+    (if next-uncovered
+      (progn (goto-char (point-min))
+             (forward-line (1- next-uncovered)))
+    (message "No more uncovered sections."))))
+
+;;;###autoload
+(defun cov-prev-uncovered ()
+  "Go to previous unvocered line."
+  (interactive)
+  (let ((prev-uncovered (cl-find-if (lambda (line) (< line (line-number-at-pos)))
+                                    (sort (cov--buffer-uncovered) :reverse t))))
+    (if prev-uncovered
+      (progn (goto-char (point-min))
+             (forward-line (1- prev-uncovered)))
+    (message "No more uncovered sections."))))
+
+(defun cov--buffer-uncovered ()
+  "Compile list of line numbers of statements that have a zero coverage."
+  (mapcar #'car (seq-filter (lambda (line) (eql (cadr line) 0)) (cov--get-buffer-coverage))))
+
+(defun cov-number-uncovered ()
+  "Caclulate number of uncovered statements in current buffer."
+  (when (cov--get-buffer-coverage)
+    (length (cov--buffer-uncovered))))
+
+(defun cov--lighter-indicator ()
+  "Setup string to show how many statements are uncovered in current buffer."
+  (let ((uncovered (cov-number-uncovered))
+        (total (length (cov--get-buffer-coverage))))
+    (if uncovered
+      (format "%s/%s" uncovered total)
+    "?")))
 
 (provide 'cov)
 ;;; cov.el ends here

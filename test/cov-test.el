@@ -945,6 +945,122 @@ text properties with list values."
       (dolist (overlay cov-overlays)
         (should (equal (overlay-get overlay 'help-echo) (pop expected)))))))
 
+(ert-deftest cov-mode--next-uncovered-no-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/all-covered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.")))))
+      (cov-next-uncovered))))
+
+(ert-deftest cov-mode--next-uncovered-one-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/one-uncovered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-next-uncovered))
+    (should (eql (point) 183))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 1))))
+      (cov-next-uncovered))
+    (should (eql (point) 183))))
+
+(ert-deftest cov-mode--next-uncovered-two-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/multiple-uncovered-unsorted"
+    (cov-mode 0)
+    (cov-mode 1)
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-next-uncovered))
+    (should (eql (point) 78))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-next-uncovered))
+    (should (eql (point) 146))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 1))))
+      (cov-next-uncovered))
+    (should (eql (point) 146))))
+
+(ert-deftest cov-mode--prev-uncovered-no-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/all-covered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (goto-char (point-max))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.")))))
+      (cov-prev-uncovered))))
+
+(ert-deftest cov-mode--prev-uncovered-one-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/one-uncovered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (goto-char (point-max))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-prev-uncovered))
+    (should (eql (point) 183))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 1))))
+      (cov-prev-uncovered))
+    (should (eql (point) 183))))
+
+(ert-deftest cov-mode--prev-uncovered-two-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/multiple-uncovered-unsorted"
+    (cov-mode 0)
+    (cov-mode 1)
+    (goto-char (point-max))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-prev-uncovered))
+    (should (eql (point) 146))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 0))))
+      (cov-prev-uncovered))
+    (should (eql (point) 78))
+    (mocker-let ((message (msg) ((:input '("No more uncovered sections.") :occur 1))))
+      (cov-prev-uncovered))
+    (should (eql (point) 78))))
+
+(ert-deftest cov-mode--number-uncovered-allcovered ()
+  (cov--with-test-buffer "clover/uncovered/all-covered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (eq (cov-number-uncovered) 0))))
+
+(ert-deftest cov-mode--number-uncovered-one-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/one-uncovered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (eq (cov-number-uncovered) 1))))
+
+(ert-deftest cov-mode--number-uncovered-two-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/multiple-uncovered-unsorted"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (eq (cov-number-uncovered) 2))))
+
+(ert-deftest cov-mode--number-uncovered-no-coverage-data ()
+  (cov--with-test-buffer "clover/uncovered/no-coverage-data"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (eq (cov-number-uncovered) nil))))
+
+
+(ert-deftest cov-mode--lighter-allcovered ()
+  (cov--with-test-buffer "clover/uncovered/all-covered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "0/8"))))
+
+(ert-deftest cov-mode--lighter-one-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/one-uncovered"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "1/9"))))
+
+(ert-deftest cov-mode--lighter-two-uncovered ()
+  (cov--with-test-buffer "clover/uncovered/multiple-uncovered-unsorted"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "2/8"))))
+
+(ert-deftest cov-mode--lighter-no-coverage-data ()
+  (cov--with-test-buffer "clover/uncovered/no-coverage-data"
+    (cov-mode 0)
+    (cov-mode 1)
+    (should (equal (cov--lighter-indicator) "?"))))
+
 ;; Local Variables:
 ;; indent-tabs-mode: nil
 ;; End:
