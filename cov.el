@@ -173,9 +173,11 @@ current directory:
 (defvar cov-coverages (make-hash-table :test 'equal)
   "Storage of coverage data.")
 
+(defvar cov-quiet t)
+
 (defsubst cov--message (format-string &rest args)
   "Call (`message' FORMAT-STRING ARGS) unless `noninteractive' is non-nil."
-  (unless noninteractive (apply #'message format-string args)))
+  (unless (or noninteractive cov-quiet) (apply #'message format-string args)))
 
 (defun cov--locate-coverage-postfix (file-dir file-name path extension)
   "Return full path of coverage file, if found.
@@ -409,7 +411,7 @@ Return a list `((FILE . ((LINE-NUM EXEC-COUNT) ...)) ...)'."
                                            (buffer-substring (point) (line-end-position))
                                            (or cov-lcov-project-root
                                                (file-name-directory cov-coverage-file)))))
-                        (message (concat "sourcefile: " sourcefile))
+                        (cov--message (concat "sourcefile: " sourcefile))
                         (setq filelines
                               (or (gethash sourcefile data)
                                   (puthash sourcefile (make-hash-table :test 'eql) data)))))
@@ -730,7 +732,7 @@ even if part of the line is outside any narrrowing."
                            (<= line-number end))
                    do (cov--set-overlay line-data max)))
       (when (buffer-file-name)
-        (message "No coverage data found for %s." (buffer-file-name))))))
+        (cov--message "No coverage data found for %s." (buffer-file-name))))))
 
 (defun cov-clear-overlays ()
   "Remove all cov overlays."
@@ -748,7 +750,7 @@ even if part of the line is outside any narrrowing."
   (let ((cov (cov--coverage)))
     (if cov
         (find-file (car cov))
-      (message "No coverage data found."))))
+      (cov--message "No coverage data found."))))
 
 (defun cov-update ()
   "Turn on cov-mode."
@@ -759,7 +761,8 @@ even if part of the line is outside any narrrowing."
 (defun cov-turn-on ()
   "Turn on cov-mode."
   (cov-clear-overlays)
-  (cov-set-overlays))
+  (let ((cov-quiet nil))
+    (cov-set-overlays)))
 
 (defun cov-turn-off ()
   "Turn off cov-mode."

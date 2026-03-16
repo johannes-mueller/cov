@@ -722,7 +722,9 @@ discarded when the buffer is killed."
                  (message (format-sting &rest args)
                           ((:input `("No coverage data found for %s."
                                      ,(format "%s/gcov/same-dir/test" test-path))))))
-      (cov-set-overlays))))
+      (let ((cov-quiet nil)
+            (noninteractive nil))
+        (cov-set-overlays)))))
 
 ;; cov--get-face
 (ert-deftest cov--get-face-test ()
