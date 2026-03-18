@@ -1063,6 +1063,27 @@ text properties with list values."
     (cov-mode 1)
     (should (equal (cov--lighter-indicator) "?"))))
 
+
+(ert-deftest cov-mode--coveragepy-empty-source-nil ()
+  (cov--with-test-buffer "coveragepy/empty/foo.py"
+    (cov-mode 0)
+    (cov-mode 1)
+
+    ; should not fail
+    (cov--get-buffer-coverage)))
+
+
+(ert-deftest cov-mode--coveragepy-empty-source-neighbor-buffer-no-recusion ()
+  (cov--with-test-buffer "coveragepy/empty/foo.py"
+    (cov-mode 0)
+    (cov-mode 1)
+    (cov--with-test-buffer "coveragepy/empty/bar.py"
+
+      ; should not end up in infinite recursion
+      (cov-update))))
+
+
+
 ;; Local Variables:
 ;; indent-tabs-mode: nil
 ;; End:
