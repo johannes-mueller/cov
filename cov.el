@@ -167,6 +167,8 @@ current directory:
                (and (file-exists-p try)
                     (cons (file-truename try) \='gcov))))))")
 
+(defvar cov--coverage-file-cache nil)
+
 (defvar-local cov-coverage-file nil
   "Last located coverage file and tool.")
 
@@ -516,19 +518,20 @@ Project coveragepy is released at <https://github.com/nedbat/coveragepy/>."
   (let*
       ((json-object-type 'hash-table)
        (json-array-type 'list)
-       (coverage (json-read))
+       (coverage (condition-case nil (json-parse-string (buffer-string)) (json-end-of-file nil)))
        (matches (list)))
-    (maphash (lambda (filename file-value)
-               (push (cons (file-truename
-                            (expand-file-name filename
-                                              (file-name-directory cov-coverage-file)))
-                           (append
-                            (mapcar (lambda (line) (list line 1))
-                                    (gethash "executed_lines" file-value))
-                            (mapcar (lambda (line) (list line 0))
-                                    (gethash "missing_lines" file-value))))
-                     matches))
-             (gethash "files" coverage))
+    (when coverage
+      (maphash (lambda (filename file-value)
+                (push (cons (file-truename
+                             (expand-file-name filename
+                                               (file-name-directory cov-coverage-file)))
+                            (append
+                             (mapcar (lambda (line) (list line 1))
+                                     (gethash "executed_lines" file-value))
+                             (mapcar (lambda (line) (list line 0))
+                                     (gethash "missing_lines" file-value))))
+                      matches))
+              (gethash "files" coverage)))
     matches))
 
 (defun cov--read-and-parse (file-path format)
@@ -656,8 +659,9 @@ it if necessary, or reloading if the file has changed."
 
         (add-hook 'kill-buffer-hook 'cov-kill-buffer-hook nil t)
         ;; Find file coverage.
-        (cdr (assoc (file-truename (buffer-file-name))
-                    (cov-data-coverage stored-data)))))))
+        (when (buffer-file-name)
+          (cdr (assoc (file-truename (buffer-file-name))
+                      (cov-data-coverage stored-data))))))))
 
 (defun cov--load-coverage (coverage file &rest ignore-current)
   "Load coverage data into COVERAGE from FILE.
@@ -669,19 +673,21 @@ Won't update `(current-buffer)' if IGNORE-CURRENT is non-nil."
     (cov--message "Reloading coverage file %s." file)
     (setf (cov-data-coverage coverage) nil))
   (unless (cov-data-coverage coverage)
-    (setf (cov-data-coverage coverage) (cov--read-and-parse file (cov-data-type coverage)))
-    (cl-loop for (srcfile . src-cov-data) in (cov-data-coverage coverage)
-             do (cl-assert (string= srcfile (file-truename srcfile))
-                           "Source files must be truenames"))
-    (setf (cov-data-mtime coverage) (cov--file-mtime file))
-    ;; Update buffers using this coverage.
-    (let ((buffers (cov-data-buffers coverage)))
-      (when ignore-current
-        (setq buffers (remove (current-buffer) buffers)))
-      (dolist (buffer buffers)
-        (with-current-buffer buffer
-          (cov--message "Updating coverage for \"%s\"" (buffer-name buffer))
-          (cov-update))))))
+    (let ((new-coverage (cov--read-and-parse file (cov-data-type coverage))))
+      (setf (cov-data-coverage coverage) new-coverage)
+      (cl-loop for (srcfile . src-cov-data) in (cov-data-coverage coverage)
+               do (cl-assert (string= srcfile (file-truename srcfile))
+                             "Source files must be truenames"))
+      (setf (cov-data-mtime coverage) (cov--file-mtime file))
+      ;; Update buffers using this coverage.json
+      (when new-coverage
+        (let ((buffers (cov-data-buffers coverage)))
+         (when ignore-current
+           (setq buffers (remove (current-buffer) buffers)))
+         (dolist (buffer buffers)
+           (with-current-buffer buffer
+             (cov--message "Updating coverage for \"%s\"" (buffer-name buffer))
+             (cov-update))))))))
 
 (defun cov-kill-buffer-hook ()
   "Unregister buffer with coverage data and clean out unused coverage."
