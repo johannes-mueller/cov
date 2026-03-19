@@ -945,13 +945,25 @@ text properties with list values."
       (dolist (overlay cov-overlays)
         (should (equal (overlay-get overlay 'help-echo) (pop expected)))))))
 
-(ert-deftest cov-mode--coveragepy-empty-source-nil ()
+(ert-deftest cov-mode--coveragepy-empty-source-file-buffer ()
   (cov--with-test-buffer "coveragepy/empty/foo.py"
     (cov-mode 0)
     (cov-mode 1)
 
     ; should not fail
     (cov--get-buffer-coverage)))
+
+; this is triggered when opening magit-diff buffers
+(ert-deftest cov-mode--coveragepy-empty-source-no-file-buffer ()
+  (cov--with-test-buffer "coveragepy/empty/foo.py"
+    (cov-mode 0)
+    (cov-mode 1)
+    (let ((file-path (concat default-directory "test/coveragepy/empty/foo.py")))
+      (with-temp-buffer
+       (mocker-let ((buffer-file-name () ((:output file-path))))
+         (cov-turn-on))
+       ; should not fail
+       (cov--get-buffer-coverage)))))
 
 (ert-deftest cov-mode--coveragepy-empty-source-neighbor-buffer-no-recusion ()
   (cov--with-test-buffer "coveragepy/empty/foo.py"

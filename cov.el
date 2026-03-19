@@ -656,8 +656,9 @@ it if necessary, or reloading if the file has changed."
 
         (add-hook 'kill-buffer-hook 'cov-kill-buffer-hook nil t)
         ;; Find file coverage.
-        (cdr (assoc (file-truename (buffer-file-name))
-                    (cov-data-coverage stored-data)))))))
+        (when (buffer-file-name)
+          (cdr (assoc (file-truename (buffer-file-name))
+                      (cov-data-coverage stored-data))))))))
 
 (defun cov--load-coverage (coverage file &rest ignore-current)
   "Load coverage data into COVERAGE from FILE.
